@@ -5,8 +5,8 @@ LDFLAGS  = -lGL -lGLEW -lglfw
 %.o: %.cc
 	${CXX} -c $< -o $@ ${CXXFLAGS}
 
-ogltest: ogltest.o
-	${CXX} $< -o $@ ${LDFLAGS}
+ogltest: ogltest.o shaders.o
+	${CXX} $^ -o $@ ${LDFLAGS}
 
 all: ogltest
 
