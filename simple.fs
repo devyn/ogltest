@@ -1,7 +1,12 @@
 #version 330 core
 
+// From vertex shader.
+in  vec3 fragmentColor;
+
+// Directly mapped from fragmentColor.
 out vec3 color;
 
 void main() {
-  color = vec3(1, 0.5 + gl_FragCoord.x / 1000 * 0.5, 1);
+  // Just copy it.
+  color = fragmentColor;
 }

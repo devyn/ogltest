@@ -101,8 +101,26 @@ int main() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(gVertexBufferData), gVertexBufferData,
       GL_STATIC_DRAW /* contents will be modified once only */);
 
+  // One color for each vertex.
+  GLfloat gColorBufferData[12 * 3 * 3];
+  for (int v = 0; v < 12 * 3; v++) {
+    gColorBufferData[3*v+0] = (gVertexBufferData[3*v+0]+1)/2.0f; // Red
+    gColorBufferData[3*v+1] = (gVertexBufferData[3*v+1]+1)/2.0f; // Green
+    gColorBufferData[3*v+2] = (gVertexBufferData[3*v+2]+1)/2.0f; // Blue
+  }
+
+  GLuint colorBuffer;
+  glGenBuffers(1, &colorBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(gColorBufferData), gColorBufferData,
+      GL_STATIC_DRAW);
+
   // Set clear color to blue.
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+
+  // Use the depth test (Z-buffer).
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   // Load shaders.
   GLuint programID = loadShadersFromFiles("simple.vs", "simple.fs");
@@ -124,7 +142,7 @@ int main() {
   GLuint matrixID = glGetUniformLocation(programID, "mvp");
 
   do {
-    // Clear the screen.
+    // Clear the screen: colors and Z-buffer.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use shader program.
@@ -155,6 +173,18 @@ int main() {
         GL_FALSE, /* are they normalized? (TODO: what is this?) */
         0,        /* stride (TODO: look up) */
         (void*)0  /* offset */
+    );
+
+    // Use vertex color attribute array [1].
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    glVertexAttribPointer(
+        1,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        0,
+        (void*)0
     );
 
     // Draw it!
