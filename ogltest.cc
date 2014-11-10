@@ -1,6 +1,6 @@
 // Include standard headers
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 // Include GLEW. Always include it before gl.h and glfw.h, since it's a bit magic.
 #include <GL/glew.h>
@@ -14,6 +14,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "shaders.hh"
+#include "image.hh"
 
 int main() {
   // Initialize GLFW
@@ -101,18 +102,50 @@ int main() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(gVertexBufferData), gVertexBufferData,
       GL_STATIC_DRAW /* contents will be modified once only */);
 
-  // One color for each vertex.
-  GLfloat gColorBufferData[12 * 3 * 3];
-  for (int v = 0; v < 12 * 3; v++) {
-    gColorBufferData[3*v+0] = (gVertexBufferData[3*v+0]+1)/2.0f; // Red
-    gColorBufferData[3*v+1] = (gVertexBufferData[3*v+1]+1)/2.0f; // Green
-    gColorBufferData[3*v+2] = (gVertexBufferData[3*v+2]+1)/2.0f; // Blue
-  }
+  // UV coordinates, vertex -> texture.
+  static const GLfloat gUVBufferData[] = {
+    0.000059f, 1.0f-0.000004f,
+    0.000103f, 1.0f-0.336048f,
+    0.335973f, 1.0f-0.335903f,
+    1.000023f, 1.0f-0.000013f,
+    0.667979f, 1.0f-0.335851f,
+    0.999958f, 1.0f-0.336064f,
+    0.667979f, 1.0f-0.335851f,
+    0.336024f, 1.0f-0.671877f,
+    0.667969f, 1.0f-0.671889f,
+    1.000023f, 1.0f-0.000013f,
+    0.668104f, 1.0f-0.000013f,
+    0.667979f, 1.0f-0.335851f,
+    0.000059f, 1.0f-0.000004f,
+    0.335973f, 1.0f-0.335903f,
+    0.336098f, 1.0f-0.000071f,
+    0.667979f, 1.0f-0.335851f,
+    0.335973f, 1.0f-0.335903f,
+    0.336024f, 1.0f-0.671877f,
+    1.000004f, 1.0f-0.671847f,
+    0.999958f, 1.0f-0.336064f,
+    0.667979f, 1.0f-0.335851f,
+    0.668104f, 1.0f-0.000013f,
+    0.335973f, 1.0f-0.335903f,
+    0.667979f, 1.0f-0.335851f,
+    0.335973f, 1.0f-0.335903f,
+    0.668104f, 1.0f-0.000013f,
+    0.336098f, 1.0f-0.000071f,
+    0.000103f, 1.0f-0.336048f,
+    0.000004f, 1.0f-0.671870f,
+    0.336024f, 1.0f-0.671877f,
+    0.000103f, 1.0f-0.336048f,
+    0.336024f, 1.0f-0.671877f,
+    0.335973f, 1.0f-0.335903f,
+    0.667969f, 1.0f-0.671889f,
+    1.000004f, 1.0f-0.671847f,
+    0.667979f, 1.0f-0.335851f
+  };
 
-  GLuint colorBuffer;
-  glGenBuffers(1, &colorBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(gColorBufferData), gColorBufferData,
+  GLuint uvBuffer;
+  glGenBuffers(1, &uvBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(gUVBufferData), gUVBufferData,
       GL_STATIC_DRAW);
 
   // Set clear color to blue.
@@ -138,8 +171,14 @@ int main() {
 
   GLfloat c = 0; // Used to move the model.
 
+  // Load texture.
+  GLuint textureID = loadBMPImage("texture.bmp");
+
   // Get handle for "mvp" in GLSL program.
-  GLuint matrixID = glGetUniformLocation(programID, "mvp");
+  GLuint mvpLoc = glGetUniformLocation(programID, "mvp");
+
+  // Get handle for "textureSampler" in GLSL program.
+  GLuint textureSamplerLoc = glGetUniformLocation(programID, "textureSampler");
 
   do {
     // Clear the screen: colors and Z-buffer.
@@ -157,7 +196,12 @@ int main() {
     glm::mat4 mvp = projection * view * model;
 
     // Input model space -> world space into program.
-    glUniformMatrix4fv(matrixID, 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &mvp[0][0]);
+
+    // Input texture sampler into program.
+    glActiveTexture(GL_TEXTURE0);            // Texture unit 0.
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glUniform1i(textureSamplerLoc, 0);       // Also texture unit 0.
 
     // Use vertex attribute array [0]. (arbitrary)
     glEnableVertexAttribArray(0);
@@ -175,12 +219,12 @@ int main() {
         (void*)0  /* offset */
     );
 
-    // Use vertex color attribute array [1].
+    // Use vertex UV coordinate attribute array [1].
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
     glVertexAttribPointer(
         1,
-        3,
+        2,        /* two coords (U,V) */
         GL_FLOAT,
         GL_FALSE,
         0,
@@ -194,8 +238,9 @@ int main() {
         12*3          /* # vertices */
     );
 
-    // Stop using vertex attribute array.
+    // Stop using vertex attribute arrays.
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 
     // Swap buffers
     glfwSwapBuffers(window);

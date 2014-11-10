@@ -1,6 +1,6 @@
 #include <fstream>
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 #include <GL/glew.h>
 #include "shaders.hh"

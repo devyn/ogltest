@@ -2,17 +2,18 @@ CXX      = clang++
 CXXFLAGS =
 LDFLAGS  = -lGL -lGLEW -lglfw
 
+OBJECTS  = ogltest.o shaders.o image.o
+
 %.o: %.cc
 	${CXX} -c $< -o $@ ${CXXFLAGS}
 
-ogltest: ogltest.o shaders.o
+ogltest: ${OBJECTS}
 	${CXX} $^ -o $@ ${LDFLAGS}
 
 all: ogltest
 
 clean:
-	rm -f ogltest.o
-	rm -f shaders.o
+	rm -f ${OBJECTS}
 	rm -f ogltest
 
 .PHONY: clean
