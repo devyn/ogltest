@@ -6,4 +6,6 @@
 // Note: texture dimensions must be powers of two.
 GLuint loadBMPImage(const char *pathToBMPFile);
 
+GLuint loadDDSImage(const char *pathToDDSFile);
+
 #endif

@@ -172,7 +172,7 @@ int main() {
   GLfloat c = 0; // Used to move the model.
 
   // Load texture.
-  GLuint textureID = loadBMPImage("texture.bmp");
+  GLuint textureID = loadDDSImage("texture.dds");
 
   // Get handle for "mvp" in GLSL program.
   GLuint mvpLoc = glGetUniformLocation(programID, "mvp");
