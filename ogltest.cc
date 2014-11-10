@@ -5,6 +5,9 @@
 // Include GLEW. Always include it before gl.h and glfw.h, since it's a bit magic.
 #include <GL/glew.h>
 
+// Include GL.
+#include <GL/gl.h>
+
 // Include GLFW
 #include <GLFW/glfw3.h>
 
@@ -15,6 +18,7 @@
 
 #include "shaders.hh"
 #include "image.hh"
+#include "camera.hh"
 
 int main() {
   // Initialize GLFW
@@ -155,21 +159,14 @@ int main() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
+  // Cull faces (use normals).
+  glEnable(GL_CULL_FACE);
+
   // Load shaders.
   GLuint programID = loadShadersFromFiles("simple.vs", "simple.fs");
 
-  // Generate transformation matrices.
-  // 45 degree FoV, 4:3 aspect ratio, 0.1 <-> 100 units range
-  glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
-
-  // View transformation.
-  glm::mat4 view = glm::lookAt(
-      glm::vec3(4, 3, 3), // Camera position (world)
-      glm::vec3(0, 0, 0), // Point to aim at (world)
-      glm::vec3(0, 1, 0)  // "Up" direction
-  );
-
-  GLfloat c = 0; // Used to move the model.
+  // Model transformation matrix (identity).
+  glm::mat4 model(1.0f);
 
   // Load texture.
   GLuint textureID = loadDDSImage("texture.dds");
@@ -181,19 +178,17 @@ int main() {
   GLuint textureSamplerLoc = glGetUniformLocation(programID, "textureSampler");
 
   do {
+    // Update position.
+    computeMatricesFromInputs(window);
+
     // Clear the screen: colors and Z-buffer.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use shader program.
     glUseProgram(programID);
 
-    // Rotation matrix for model.
-    c += 0.5f;
-    glm::mat4 model = glm::translate(glm::vec3(0, cos(0.05f * c), sin(0.05f * c))) *
-                      glm::rotate(c, glm::vec3(0,0.5,1));
-
     // Total transformation for model space -> world space
-    glm::mat4 mvp = projection * view * model;
+    glm::mat4 mvp = getProjectionMatrix() * getViewMatrix() * model;
 
     // Input model space -> world space into program.
     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &mvp[0][0]);
