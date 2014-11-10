@@ -12,6 +12,7 @@ all: ogltest
 
 clean:
 	rm -f ogltest.o
+	rm -f shaders.o
 	rm -f ogltest
 
 .PHONY: clean

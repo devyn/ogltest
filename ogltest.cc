@@ -10,6 +10,8 @@
 
 // Include GLM
 #include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "shaders.hh"
 
@@ -52,11 +54,44 @@ int main() {
   glGenVertexArrays(1, &vertexArrayID);
   glBindVertexArray(vertexArrayID);
 
-  // Vertices representing a triangle.
+  // Vertices representing a cube.
   static const GLfloat gVertexBufferData[] = {
-    -1.0f, -1.0f, 0.0f,
-     1.0f, -1.0f, 0.0f,
-     0.0f,  1.0f, 0.0f,
+    -1.0f,-1.0f,-1.0f, // triangle 1 : begin
+    -1.0f,-1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f, // triangle 1 : end
+    1.0f, 1.0f,-1.0f, // triangle 2 : begin
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f, // triangle 2 : end
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f
   };
 
   // Insert the triangle data into a vertex buffer.
@@ -72,12 +107,39 @@ int main() {
   // Load shaders.
   GLuint programID = loadShadersFromFiles("simple.vs", "simple.fs");
 
+  // Generate transformation matrices.
+  // 45 degree FoV, 4:3 aspect ratio, 0.1 <-> 100 units range
+  glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+
+  // View transformation.
+  glm::mat4 view = glm::lookAt(
+      glm::vec3(4, 3, 3), // Camera position (world)
+      glm::vec3(0, 0, 0), // Point to aim at (world)
+      glm::vec3(0, 1, 0)  // "Up" direction
+  );
+
+  GLfloat c = 0; // Used to move the model.
+
+  // Get handle for "mvp" in GLSL program.
+  GLuint matrixID = glGetUniformLocation(programID, "mvp");
+
   do {
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use shader program.
     glUseProgram(programID);
+
+    // Rotation matrix for model.
+    c += 0.5f;
+    glm::mat4 model = glm::translate(glm::vec3(0, cos(0.05f * c), sin(0.05f * c))) *
+                      glm::rotate(c, glm::vec3(0,0.5,1));
+
+    // Total transformation for model space -> world space
+    glm::mat4 mvp = projection * view * model;
+
+    // Input model space -> world space into program.
+    glUniformMatrix4fv(matrixID, 1, GL_FALSE, &mvp[0][0]);
 
     // Use vertex attribute array [0]. (arbitrary)
     glEnableVertexAttribArray(0);
@@ -99,7 +161,7 @@ int main() {
     glDrawArrays(
         GL_TRIANGLES, /* form triangle(s) */
         0,            /* first vertex index */
-        3             /* # vertices */
+        12*3          /* # vertices */
     );
 
     // Stop using vertex attribute array.
