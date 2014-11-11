@@ -1,8 +1,8 @@
 CXX      = clang++
-CXXFLAGS =
+CXXFLAGS = -std=c++11
 LDFLAGS  = -lGL -lGLEW -lglfw
 
-OBJECTS  = ogltest.o shaders.o image.o camera.o
+OBJECTS  = ogltest.o shaders.o image.o camera.o obj.o
 
 %.o: %.cc
 	${CXX} -c $< -o $@ ${CXXFLAGS}

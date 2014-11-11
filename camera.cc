@@ -30,6 +30,8 @@ void handleScroll(GLFWwindow *window, double xoffset, double yoffset) {
 
 void initializeCamera(GLFWwindow *window) {
   glfwSetScrollCallback(window, &handleScroll);
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetCursorPos(window, 0, 0);
 }
 
 void computeMatricesFromInputs(GLFWwindow *window) {
@@ -51,11 +53,11 @@ void computeMatricesFromInputs(GLFWwindow *window) {
   glfwGetCursorPos(window, &xpos, &ypos);
 
   // Reset mouse position (so it doesn't move)
-  glfwSetCursorPos(window, 1024/2, 768/2);
+  glfwSetCursorPos(window, 0, 0);
 
   // Compute new orientation
-  horizontalAngle += mouseSpeed * deltaTime * float(1024/2 - xpos);
-  verticalAngle   += mouseSpeed * deltaTime * float( 768/2 - ypos);
+  horizontalAngle += mouseSpeed * deltaTime * float(-xpos);
+  verticalAngle   += mouseSpeed * deltaTime * float(-ypos);
 
   // Compute direction (front vector) as Cartesian coordinates
   glm::vec3 direction(
